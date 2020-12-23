@@ -38,7 +38,7 @@ WF_obj.setOption('OptionName', optionValue)
 
 ### Addition of properties
 
-The methods present in this class can be applied to already computed DFF matrices or any other properties compatible. In order to do so, after calling the object, they can be added by using the method `addProperty`. 
+The methods present in this class can be applied to already computed DFF matrices or any other compatible property. In order to do so, after calling the object, they can be added by using the method `addProperty`. 
 
 ```
 WF_obj.setOption('PropertyName', PropertyValue)
