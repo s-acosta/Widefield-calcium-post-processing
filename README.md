@@ -23,7 +23,7 @@ WF_obj = WideFieldProcessor('filename.tif','Mode','manual')
 ```
 
 
-## Parameters
+### Change of Parameters
 
 The class accepts two ways of accepting change of options. If it is run in auto mode (default mode):
 
