@@ -22,7 +22,6 @@ Additionally, to manually run the class with the filename specified:
 WF_obj = WideFieldProcessor('filename.tif','Mode','manual')
 ```
 
-
 ### Change of Parameters
 
 The class accepts two ways of accepting change of options. If it is run in auto mode (default mode):
@@ -35,6 +34,14 @@ The defaults names and values of the parameters can be found below. In the manua
 
 ```
 WF_obj.setOption('OptionName', optionValue)
+```
+
+### Addition of properties
+
+The methods present in this class can be applied to already computed DFF matrices or any other properties compatible. In order to do so, after calling the object, they can be added by using the method `addProperty`. 
+
+```
+WF_obj.setOption('PropertyName', PropertyValue)
 ```
 
 ## Features
