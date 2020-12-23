@@ -60,10 +60,6 @@ WF_obj = WideFieldProcessor('filename.tif','RegisterSession', 'on')
 ```
 
 ```
-WF_obj.setOption('RegisterSession', 'on')
-```
-
-```
 [DFF_registered, tform] = WF_obj.registerSession(session_reference_filename, mouse_reference_filename)
 ```
 
@@ -73,9 +69,14 @@ A GUI will appear showing the session reference and the mouse reference, respect
 
 ### Masking with parcellation template
 
-If this option is chosed, then method `maskDFF(obj, template_struct)` will mask the DFF and remove the values outside the mask, so that the final DFF is lighter and can be saved faster. The input argument `template_struct` can be a structure or a matrix. In any case, the fields of the structure or the third dimension of the matrix have to be logical matrices of the same size as the individual frames of the stack. In order to create the template that matches a reference or the same stack, refere to  
+If this option is chosed, then method `maskDFF(obj, mask_struct)` will mask the DFF and remove the values outside the mask, so that the final DFF is lighter and can be saved faster. The input argument `template_struct` can be a structure or a matrix. In any case, the fields of the structure or the third dimension of the matrix have to be logical matrices of the same size as the individual frames of the stack. In order to move a template over an image in order to match them refere to  [Template Matcher GUI](https://github.com/s-acosta/Template-matcher-GUI).
 
-
+```
+WF_obj = WideFieldProcessor('filename.tif', 'Mask', mask_struct)
+```
+```
+[DFF_masked] = WF_obj.maskSession(mask_struct)
+```
 
 ## Graphical methods
 
