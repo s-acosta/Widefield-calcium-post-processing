@@ -25,6 +25,18 @@ WF_obj = WideFieldProcessor('filename.tif','Mode','manual')
 
 ## Parameters
 
+The class accepts two ways of accepting change of options. If it is run in auto mode (default mode):
+
+```
+WF_obj = WideFieldProcessor('filename.tif','OptionName', optionValue)
+```
+
+The defaults names and values of the parameters can be found below. In the manual mode (and also in the auto mode if we want to change anything after initializing), parameters can be changed using:
+
+```
+WF_obj.setOption('OptionName', optionValue)
+```
+
 ## Features
 
 
