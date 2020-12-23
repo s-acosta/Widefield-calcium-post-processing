@@ -39,6 +39,37 @@ WF_obj.setOption('OptionName', optionValue)
 
 ## Features
 
+### Specific frame reader
+
+If the **Frame** option is set, then the class can read only the defined set of frames. Useful if the computer's RAM is not very large or if only certain chunks of the multi-tif are necessary, so that the processing time can be reduced. If the whole image is to be read, then the option `'Frame'` has to be set at `'off'` (default). Otherwise, the option value has to be a vector of two-dimensions.
+
+```
+WF_obj = WideFieldProcessor('filename.tif','Frame', 'off')
+```
+
+```
+WF_obj.setOption('Frame', 1:100)
+```
+
+### Registration with reference image
+
+If activated, this option lets register the average projection of the current multi-tiff with a reference image. If it exists, it will automatically look for the reference image of the current session `'[mouse_session]_refimg.tif'` and compare it to the mouse reference image `'[mouse]_reference.tif'`. If it can't find by name the reference of the session, it will prompt the user to choose a file or use the average projection instead. If it can't the mouse reference it will prompt the user to choose one.
+
+```
+WF_obj = WideFieldProcessor('filename.tif','RegisterSession', 'on')
+```
+
+```
+WF_obj.setOption('RegisterSession', 'on')
+```
+
+```
+[DFF_registered, tform] = WF_obj.registerSession(session_reference_filename, mouse_reference_filename)
+```
+
+#### Usage
+
+A GUI will appear showing the session reference and the mouse reference, respectively. The user will then be prompted to choose the same points in both images (it has to be more than two). The transformation will then be applied to the whole DFF and a figure comparing the average projection and the reference will be showed. 
 
 
 
