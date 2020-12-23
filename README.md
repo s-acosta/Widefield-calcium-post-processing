@@ -14,9 +14,9 @@ Clone `Widefield-calcium-post-processing` into your local directory and add it t
 WF_obj = WideFieldProcessor('filename.tif')
 ```
 
-The principal input of `WideFieldProcessor` is a mult-tif file with the extension `.tif`. The class will be called specifying the filename, present in the path, as input. If there is no input argument, it will prompt the user to select one. 
+The principal input of `WideFieldProcessor` is a mult-tif file with the extension `.tif`. The class will be called specifying the filename, present in the path, as input. It will just create the `WF_obj` object, so that only the desired methods are applied. 
 
-To run the class manually:
+To run the class manually with the filename specified:
 
 ```
 WF_obj = WideFieldProcessor('filename.tif','Mode','manual')
