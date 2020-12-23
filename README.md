@@ -71,6 +71,10 @@ WF_obj.setOption('RegisterSession', 'on')
 
 A GUI will appear showing the session reference and the mouse reference, respectively. The user will then be prompted to choose the same points in both images (it has to be more than two). The transformation will then be applied to the whole DFF and a figure comparing the average projection and the reference will be showed. 
 
+### Masking with parcellation template
+
+If this option is chosed, then method `maskDFF(obj, template_struct)` will mask the DFF and remove the values outside the mask, so that the final DFF is lighter and can be saved faster. The input argument `template_struct` can be a structure or a matrix. In any case, the fields of the structure or the third dimension of the matrix have to be logical matrices of the same size as the individual frames of the stack. In order to create the template that matches a reference or the same stack, refere to  
+
 
 
 ## Graphical methods
