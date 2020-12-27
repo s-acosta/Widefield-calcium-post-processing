@@ -169,6 +169,7 @@ classdef WideFieldProcessor < handle
         end
         
     end
+        
        
     methods (Access = private)
         
@@ -230,7 +231,8 @@ classdef WideFieldProcessor < handle
         end
         
     end
-   
+    
+    
     methods (Access = public, Static)
         
         function tform = registerSession(moving_image, fixed_reference)
@@ -286,7 +288,6 @@ classdef WideFieldProcessor < handle
         
         function maskSession(DFF, mask_struct)
             
-     
         end
         
     end
@@ -355,9 +356,11 @@ classdef WideFieldProcessor < handle
             
         end
         
+        
     end
     
     % Other methods
+    
     methods (Access = private, Static)
         
         function isCancelled(file)
