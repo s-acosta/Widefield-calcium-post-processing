@@ -12,6 +12,7 @@ classdef WideFieldProcessor < handle
         avg_projection
         f0
         frame_F
+        mask struct
     end
     
     properties (Access = public)
@@ -99,21 +100,19 @@ classdef WideFieldProcessor < handle
         
     end
     
-    
     % Reading methods & pre-processing
     methods (Access = public)
         
         function readStack(obj, filename)
             
             disp('Reading tif stack...')
-            tic
+            
             if nargin == 1
                 obj.Stack = TIFFStack(obj.filename);
             else
                 obj.Stack = TIFFStack(filename);
             end
-            time = toc;
-            disp([' Time reading is ', time,' seconds.']);
+            
             
         end
         
@@ -138,8 +137,8 @@ classdef WideFieldProcessor < handle
         end
         
     end
-    
-    %% Post-Processing methods
+   
+    % Post-Processing methods
     methods (Access = public)
         
         function registerDFF(obj)
@@ -150,21 +149,12 @@ classdef WideFieldProcessor < handle
             end
             
             [moving_reference, fixed_reference] = getReferences(obj);
-            tform = registerSession(moving_reference, fixed_reference);
+            tform = obj.registerSession(moving_reference, fixed_reference);
             
             obj.dff = imwarp(obj.dff, tform, 'OutputView', ...
                 imref2d(size(obj.dff)));
             
             obj.isRegistered = true;
-            
-        end
-        
-        function maskDFF(obj)
-            
-            if obj.isMasked == true
-                disp('DFF has already been masked')
-                return
-            end
             
         end
         
@@ -229,11 +219,20 @@ classdef WideFieldProcessor < handle
 
         end
         
+        function getMask(obj)
+            
+            session = strsplit(obj.filename, {'.', '_', '-'});
+            mouse = session{1};
+            mask_file = strcat(mouse,'_mask.mat');
+            obj.mask = importdata(mask_file);
+            
+        end
+        
     end
    
     methods (Access = public, Static)
         
-        function tform = registerSession(moving_image, fixed_reference)
+        function tform = registerSession(moving_reference, fixed_reference)
             % registerSession Registration of the session reference with
             % the overall mouse reference.
             %
@@ -261,8 +260,8 @@ classdef WideFieldProcessor < handle
             disp([' Rotation angle is ', num2str(angle), ' degrees.'])
             disp([' Scale is ', num2str(scale), '.'])
             
-            fixed_image = imwarp(moving_image, tform, 'OutputView',...
-                imref2d(size(moving_image) ));
+            fixed_image = imwarp(moving_reference, tform, 'OutputView',...
+                imref2d(size(moving_reference) ));
             
             try
                 [fig_opt, ax_opt, t_opt] = figure_properties();
@@ -273,7 +272,7 @@ classdef WideFieldProcessor < handle
             end
             
             subplot(1, 2, 1)
-            imshowpair(moving_image, fixed_reference)
+            imshowpair(moving_reference, fixed_reference)
             set(gca, ax_opt{:}),
             title('Original Reference', t_opt{:});
             
@@ -284,16 +283,10 @@ classdef WideFieldProcessor < handle
             
         end
         
-        function maskSession(DFF, mask_struct)
-            
-     
-        end
         
     end
     
-
     % Graphic methods
-    
     methods
         
         function showPhotoBleaching(obj)
@@ -318,20 +311,43 @@ classdef WideFieldProcessor < handle
             
             parser = inputParser;
             addParameter(parser, 'DownSamp', 1)
+            addParameter(parser, 'Mask', 'window')
             parse(parser,varargin{:})
             
             down_samp = parser.Results.DownSamp;
             num_frames = size(obj.Stack, 3);
-            max_value = 0.35 * max(obj.dff,[],'all');
-            min_value = min(obj.dff, [], 'all');
             
+            if obj.isRegistered
+                switch parser.Results.Mask
+                    
+                    case 'off'
+                        mask_region = ones(400);
+                        
+                    case 'window'
+                        obj.getMask
+                        mask_region = obj.mask.('Window');
+                        
+                    otherwise
+                        obj.getMask
+                        window_mask = obj.mask.('Window');
+                        mask_region = obj.mask.(parser.Results.Mask);
+                        mask_region(~window_mask) = 0;
+                end
+                
+            else
+                disp('Mask not displayed because the session is not registered')
+                mask_region = ones(400);
+            end
+                            
             fig = figure;
             
             set(fig, 'visible', 'off');
             set(fig,'Color',[0 0 0])
             set(fig,'Position',[100 100 525 525]);
+            
             subplot('Position',[0.05 0.05 0.9 0.9])
-            colormap('jet');
+            cmap = jet(256);
+            colormap(cmap)
             set(fig, 'visible', 'on');
             
             for i = 1:num_frames
@@ -342,11 +358,14 @@ classdef WideFieldProcessor < handle
                 
                 if rem(i,down_samp) == 0
                     curr_frame = obj.dff(:,:,i);
-                    imagesc(curr_frame);
-                    caxis([min_value max_value])
+                    
+                    imagesc(curr_frame, 'AlphaData', mask_region);
+                    
+                    caxis([0 90])
                     axis square
                     title(['Frame ' num2str(i) '/' num2str(num_frames)],...
                         'color',[1 1 1]);
+                    set(gca,'color',0*[1 1 1]);
                     
                     drawnow()
                 end
