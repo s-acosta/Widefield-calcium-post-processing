@@ -1,6 +1,16 @@
-function finishNoise()
+function finishNoise(noise_type)
 
-load chirp
+
+switch noise_type
+    
+    case 1
+        load chirp
+        
+    case 2
+        load Handel
+        
+end
+        
 sound(y,Fs)
 
 end
