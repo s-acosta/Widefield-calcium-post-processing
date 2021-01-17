@@ -191,7 +191,7 @@ classdef WideFieldProcessor < handle
         
         function computeDFF(obj)
 
-            image_raw = single(obj.Stack(:, :, :));
+            image_raw = obj.readTiff;
             
             if obj.isRegistered
                 image_raw = imwarp(image_raw, obj.tform, 'OutputView', ...
