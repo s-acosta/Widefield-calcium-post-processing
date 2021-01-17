@@ -149,10 +149,12 @@ classdef WideFieldProcessor < handle
                
                for i = 1:num_blocks
                    
+                   subroutine_progressBar
+                   
                    startt = (i-1)*1000 + 1;
                    endd = i * 1000; 
                    
-                   image_raw(:, :, start : endd) = ...
+                   image_raw(:, :, startt : endd) = ...
                        single(obj.Stack(: ,:, frames(startt:endd)));
                    
                end
