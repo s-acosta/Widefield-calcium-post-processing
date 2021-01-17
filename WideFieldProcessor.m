@@ -131,35 +131,42 @@ classdef WideFieldProcessor < handle
         
         function image_raw = readTiff(obj, frames)
             
+           block_size = 500;
+            
            if nargin == 1
                frames = true(1, size(obj.Stack,3));
            end
            
            n_frames = length(frames);
            
-           if n_frames < 1000
+           if n_frames < block_size
                image_raw = single(obj.Stack(: ,:, frames));
            
            else
                
                image_raw = zeros(size(obj.Stack,1), size(obj.Stack,2), ...
                    n_frames, 'single');
-                   
-               num_blocks = ceil(n_frames / 1000);
                
+               
+               num_blocks = floor(n_frames / block_size);
+               
+               progressBar(0)
                for i = 1:num_blocks
                    
-                   startt = (i-1)*1000 + 1;
-                   endd = i * 1000; 
+                   progressBar(i/num_blocks);
                    
-                   image_raw(:, :, start : endd) = ...
+                   startt = (i-1)*block_size + 1;
+                   endd = i * block_size; 
+                   
+                   image_raw(:, :, startt : endd) = ...
                        single(obj.Stack(: ,:, frames(startt:endd)));
                    
                end
           
-               if ~isequal(mod(n_frames, 1000) , 0)
-                   image_raw(:, :, num_blocks*1000 + 1) = ...
-                       single(obj.Stack(: ,:, frames(num_blocks*1000 + 1:end)));
+               if ~isequal(mod(n_frames, block_size) , 0)
+                   image_raw(:, :, num_blocks*block_size + 1:end) = ...
+                       single(obj.Stack(: ,:, ...
+                       frames(num_blocks*block_size + 1:end)));
                end
                        
                        

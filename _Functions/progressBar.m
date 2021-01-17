@@ -206,7 +206,7 @@ if percentdone == 100 % Task completed
     delete(progfig) % Close progress bar
 
     %change the close request function back to normal
-    set(progfig,'CloseRequestFcn','closereq'); 
+%     set(progfig,'CloseRequestFcn','closereq'); 
     % Clear persistent vars
     clear progfig progpatch starttime lastupdate firstIteration 
     return
