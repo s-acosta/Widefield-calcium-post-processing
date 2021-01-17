@@ -9,6 +9,7 @@ classdef WideFieldProcessor < handle
         Stack
         filename(1,:)   char
         dff
+        dff_deconvolved
         dff_sigma
         dff_baseline
         avg_projection
@@ -178,6 +179,49 @@ classdef WideFieldProcessor < handle
     % Post-Processing methods
     methods (Access = public)
         
+        function image_raw = readTiff(obj, frames)
+            
+           if nargin == 1
+               frames = true(1, size(obj.Stack,3));
+           end
+           
+           n_frames = length(frames);
+           
+           if n_frames < 1000
+               image_raw = single(obj.Stack(: ,:, frames));
+           
+           else
+               
+               image_raw = zeros(size(obj.Stack,1), size(obj.Stack,2), ...
+                   n_frames, 'single');
+                   
+               num_blocks = ceil(n_frames / 1000);
+               
+               for i = 1:num_blocks
+                   
+                   startt = (i-1)*1000 + 1;
+                   endd = i * 1000; 
+                   
+                   image_raw(:, :, start : endd) = ...
+                       single(obj.Stack(: ,:, frames(startt:endd)));
+                   
+               end
+               
+          
+               if ~isequal(mod(n_frames, 1000) , 0)
+                   image_raw(:, :, num_blocks*1000 + 1) = ...
+                       single(obj.Stack(: ,:, frames(num_blocks*1000 + 1:end)));
+               end
+                       
+                   
+         
+           end
+           
+           
+            
+            
+        end
+        
         function registerDFF(obj)
             
             if obj.isRegistered == true
@@ -326,6 +370,37 @@ classdef WideFieldProcessor < handle
             obj.isThresholded = true;
           
            
+        end
+        
+        function deconvolveDFF(obj)
+            % Deconvolution by Lucy-Richardson method, as shown in Merav Stern, 
+            % Eric Shea-Brown, Daniela Witten bioRxiv 2020.02.01.930040;
+            % 
+            % Developed by SAM on 1/15/2020
+            % Last updated 1/15/2020
+            
+            if ~obj.isThresholded
+                disp('First threshold the signal, works better')
+                return
+            end
+            
+            if ~obj.isZipped
+                obj.zipDFF
+            end
+            
+            obj.dff_deconvolved = zeros(size(obj.dff,1), size(obj.dff,2), ...
+                'single');
+            
+            gamma = 0.95; % Decay parameter, taken for Clancy et al, 2019.
+            p = 0:1:500; % Points
+            conv_kernel = gamma.^p;
+            kernel_for_lucy = [zeros(size(conv_kernel)) conv_kernel]';
+            
+            for i = 1:size(obj.dff,1)
+                obj.dff_deconvolved(i,:) = deconvlucy(obj.dff(i,:)', ...
+                    kernel_for_lucy);
+            end
+            
         end
         
         function zipDFF(obj)
@@ -501,7 +576,7 @@ classdef WideFieldProcessor < handle
                 n_frames = size(mat_old, 3);
                 
                 mat_old = reshape(mat_old, [n_pixels, n_frames]);
-                recovery_vec = mat_old(:,1) ~= 0;
+                recovery_vec = mean(mat_old,2) ~= 0;
                 
                 mat_new = mat_old;
                 mat_new(~recovery_vec, :) = [];
@@ -703,6 +778,8 @@ classdef WideFieldProcessor < handle
             
         end
         
+        
+          
     end
     
     methods (Access = public, Static)

@@ -129,9 +129,47 @@ classdef WideFieldProcessor < handle
             
         end
         
+        function image_raw = readTiff(obj, frames)
+            
+           if nargin == 1
+               frames = true(1, size(obj.Stack,3));
+           end
+           
+           n_frames = length(frames);
+           
+           if n_frames < 1000
+               image_raw = single(obj.Stack(: ,:, frames));
+           
+           else
+               
+               image_raw = zeros(size(obj.Stack,1), size(obj.Stack,2), ...
+                   n_frames, 'single');
+                   
+               num_blocks = ceil(n_frames / 1000);
+               
+               for i = 1:num_blocks
+                   
+                   startt = (i-1)*1000 + 1;
+                   endd = i * 1000; 
+                   
+                   image_raw(:, :, start : endd) = ...
+                       single(obj.Stack(: ,:, frames(startt:endd)));
+                   
+               end
+          
+               if ~isequal(mod(n_frames, 1000) , 0)
+                   image_raw(:, :, num_blocks*1000 + 1) = ...
+                       single(obj.Stack(: ,:, frames(num_blocks*1000 + 1:end)));
+               end
+                       
+                       
+           end
+           
+        end
+        
         function computeProperties(obj)
 
-            image_raw = single(obj.Stack(:, :, :));
+            image_raw = obj.readTiff;
             obj.avg_projection = mean(image_raw, 3);
             obj.frame_F = squeeze(mean(image_raw, [1 2]));
             
@@ -178,6 +216,8 @@ classdef WideFieldProcessor < handle
     
     % Post-Processing methods
     methods (Access = public)
+        
+        
         
         function registerDFF(obj)
             
