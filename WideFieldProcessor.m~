@@ -104,8 +104,9 @@ classdef WideFieldProcessor < handle
             obj.dff = [];
             obj.dff_deconvolved = [];
            
-            obj.isZipped = false;
+            obj.isRegistered = false;
             obj.isMasked = false;
+            obj.isZipped = false;
             obj.isThresholded = false;
             
         end
@@ -256,8 +257,9 @@ classdef WideFieldProcessor < handle
                 imref2d(size(image_raw)));
             end
             
-            obj.dff = 100* (image_raw - obj.f0) ./ obj.f0;
-            obj.maskSession;
+            
+            
+            
             
         end
         
