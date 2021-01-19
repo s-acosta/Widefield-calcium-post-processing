@@ -2,16 +2,14 @@ classdef WideFieldProcessor < handle
     % WidefieldProcessor Reads fluorescence activity from multi-tif files.
     %
     % Developed by SAM on 12/23/2020. Based on code developed by MJG and KKS.
-    % Last updated 1/11/2020.
+    % Last updated 1/19/2020.
     
     properties (Access = public)
         Options         struct
         Stack
         filename(1,:)   char
         dff
-        dff_deconvolved
         dff_sigma
-        dff_baseline
         avg_projection
         f0
         frame_F
@@ -150,6 +148,7 @@ classdef WideFieldProcessor < handle
                frames = true(1, size(obj.Stack,3));
            end
            
+           frames = find(frames);
            n_frames = length(frames);
            
            if n_frames < block_size
@@ -163,7 +162,6 @@ classdef WideFieldProcessor < handle
                
                num_blocks = floor(n_frames / block_size);
                
-               progressBar(0);
                for i = 1:num_blocks
                    
                    progressBar(i/(num_blocks+1));
@@ -201,7 +199,7 @@ classdef WideFieldProcessor < handle
             obj.frame_F = squeeze(mean(image_raw, [1 2]));
             
             if ~isempty(obj.moving_time)
-                obj.f0 = mean(image_raw(:, :, obj.moving_time), 3);
+                obj.f0 = mean(image_raw(:, :,~obj.moving_time), 3);
             else
                 obj.f0 = median(image_raw, 3);
             end
@@ -221,26 +219,9 @@ classdef WideFieldProcessor < handle
             
             disp('Computing DFF...')
             
-            obj.dff = zeros(size(image_raw,1), size(image_raw,2), 'single');
-            progressBar(0)
-            for frame = 1:size(image_raw, 3)
-                progressBar(frame/(size(image_raw, 3)-2))
-                obj.dff(:,:,frame) = 100* (image_raw(:,:,1) - obj.f0) ./ obj.f0;
-                image_raw(:,:,1) = [];
-            end
-                
-            if ~isempty(obj.moving_time)
-                obj.dff_sigma = std(obj.dff(:,:,~obj.moving_time), 1, 3);
-                progressBar(frame/(size(image_raw, 3)-1))
-                obj.dff_baseline = mean(obj.dff(:,:,~obj.moving_time), 3);
-                progressBar(1)
-            else
-                obj.dff_sigma = std(obj.dff, 3);
-                progressBar(frame/(size(image_raw, 3)-1))
-                obj.dff_baseline = mean(obj.dff, 3);
-                progressBar(1)
-            end
-            
+            obj.dff = 100* (image_raw - obj.f0) ./ obj.f0;
+            obj.dff_sigma = std(obj.dff(:,:,obj.moving_time), 1, 3);
+                        
         end
         
         function reComputeDFF(obj)
@@ -257,7 +238,10 @@ classdef WideFieldProcessor < handle
             end
             
             obj.dff = 100* (image_raw - obj.f0) ./ obj.f0;
-            obj.maskSession;
+            
+            if obj.isMasked
+                obj.maskSession;
+            end
             
         end
         
@@ -296,8 +280,6 @@ classdef WideFieldProcessor < handle
                 imref2d(size(obj.dff)));
             obj.dff_sigma = imwarp(obj.dff_sigma, obj.tform, 'OutputView', ...
                 imref2d(size(obj.dff_sigma)));
-            obj.dff_baseline = imwarp(obj.dff_baseline, obj.tform, 'OutputView', ...
-                imref2d(size(obj.dff_baseline)));
             
             obj.isRegistered = true;
             
@@ -355,7 +337,7 @@ classdef WideFieldProcessor < handle
             obj.f0(~mask_mat) = 0;
             obj.avg_projection(~mask_mat) = 0;
             obj.dff_sigma(~mask_mat) = 0;
-            obj.dff_baseline(~mask_mat) = 0;
+            
             
             try
                 obj.dff(~mask_mat_DFF) = 0;
@@ -385,6 +367,10 @@ classdef WideFieldProcessor < handle
                 return
             end
             
+            if ~obj.isMasked
+                obj.maskSession
+            end
+            
             if isequal(ndims(obj.dff), 3)
                 obj.zipDFF
             end
@@ -396,9 +382,9 @@ classdef WideFieldProcessor < handle
             
             for j = 1:length(valid_idxs)
                 
-                std = obj.dff_sigma(valid_idxs(j));
-                baseline = obj.dff_baseline(valid_idxs(j));
-                isHigh = obj.dff(j,:) > (2*std + baseline);
+                idx = valid_idxs(j);
+                std = obj.dff_sigma(idx);
+                isHigh = obj.dff(j,:) > 2*std;
                 where_isHigh = find(isHigh);
                 
                 if isempty(where_isHigh)
@@ -418,8 +404,9 @@ classdef WideFieldProcessor < handle
                         continue
                         
                     else
+                        
                         temp = obj.dff(j, where_isHigh(i):where_isHigh(i+1));
-                        where_ends = find(temp < 0.5 * (std + baseline), 1, 'first');
+                        where_ends = find(temp < 0.5 * std, 1, 'first');
                         where_ends = where_ends + where_isHigh(i);
                         obj.dff(j, where_ends:where_isHigh(i+1)) = 0;
                         
@@ -452,16 +439,14 @@ classdef WideFieldProcessor < handle
                 obj.zipDFF
             end
             
-            obj.dff_deconvolved = zeros(size(obj.dff,1), size(obj.dff,2), ...
-                'single');
-            
             gamma = 0.95; % Decay parameter, taken for Clancy et al, 2019.
-            p = 0:1:500; % Points
+            p = 0:1:50; % Points
             conv_kernel = gamma.^p;
             kernel_for_lucy = [zeros(size(conv_kernel)) conv_kernel]';
             
             for i = 1:size(obj.dff,1)
-                obj.dff_deconvolved(i,:) = deconvlucy(obj.dff(i,:)', ...
+                progressbar(i/size(obj.dff,1))
+                obj.dff(i,:) = deconvlucy(obj.dff(i,:)', ...
                     kernel_for_lucy);
             end
             
@@ -812,7 +797,6 @@ classdef WideFieldProcessor < handle
             
         end
         
-                
     end
     
     methods (Access = public, Static)
@@ -839,7 +823,7 @@ classdef WideFieldProcessor < handle
             
         end
         
-        function showRegionTraces(mat, mask, traces, pixel_idx)
+        function showRegionTraces(mat, traces, pixel_idx, mask)
             
             n_pixels = size(traces,1);
             pixel_mat = false(size(mat, 1), size(mat, 2));
