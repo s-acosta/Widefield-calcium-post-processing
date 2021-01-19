@@ -382,6 +382,7 @@ classdef WideFieldProcessor < handle
             
             for j = 1:length(valid_idxs)
                 
+                progressBar(j/length(valid_idxs));
                 idx = valid_idxs(j);
                 std = obj.dff_sigma(idx);
                 isHigh = obj.dff(j,:) > 2*std;
@@ -445,7 +446,7 @@ classdef WideFieldProcessor < handle
             kernel_for_lucy = [zeros(size(conv_kernel)) conv_kernel]';
             
             for i = 1:size(obj.dff,1)
-                progressbar(i/size(obj.dff,1))
+                progressBar(i/size(obj.dff,1));
                 obj.dff(i,:) = deconvlucy(obj.dff(i,:)', ...
                     kernel_for_lucy);
             end
