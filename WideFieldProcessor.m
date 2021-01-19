@@ -100,8 +100,6 @@ classdef WideFieldProcessor < handle
         function restart(obj)
             
             obj.dff = [];
-            obj.dff_deconvolved = [];
-           
             obj.isZipped = false;
             obj.isMasked = false;
             obj.isThresholded = false;
@@ -189,11 +187,11 @@ classdef WideFieldProcessor < handle
         
         function computeProperties(obj, image_raw)
             
-            disp('Computing stack properties...')
-
             if nargin == 1
                 image_raw = obj.readTiff;
             end
+            
+            disp('Computing stack properties...')
             
             obj.avg_projection = mean(image_raw, 3);
             obj.frame_F = squeeze(mean(image_raw, [1 2]));
@@ -275,12 +273,14 @@ classdef WideFieldProcessor < handle
                 imref2d(size(obj.avg_projection)));
             obj.f0 = imwarp(obj.f0, obj.tform, 'OutputView', ...
                 imref2d(size(obj.f0)));
-           
+           try
             obj.dff = imwarp(obj.dff, obj.tform, 'OutputView', ...
                 imref2d(size(obj.dff)));
             obj.dff_sigma = imwarp(obj.dff_sigma, obj.tform, 'OutputView', ...
                 imref2d(size(obj.dff_sigma)));
             
+           catch
+           end
             obj.isRegistered = true;
             
         end
