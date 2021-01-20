@@ -247,7 +247,7 @@ classdef WideFieldProcessor < handle
             obj.dff = 100* (image_raw - obj.f0) ./ obj.f0;
             
             if obj.isMasked
-                obj.isMaked = false;
+                obj.isMasked = false;
                 obj.maskSession;
             end
             
