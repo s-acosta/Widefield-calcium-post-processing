@@ -245,11 +245,10 @@ classdef WideFieldProcessor < handle
             end
             
             obj.dff = 100* (image_raw - obj.f0) ./ obj.f0;
-            
-            if obj.isMasked
-                obj.isMasked = false;
-                obj.maskSession;
-            end
+            obj.isZipped = false;
+            obj.isMasked = false;
+            obj.isThresholded = false;
+            obj.isDeconvolved = false;
             
         end
         
@@ -318,13 +317,8 @@ classdef WideFieldProcessor < handle
             
         end
         
-        function maskSession(obj)
+        function maskDFF(obj)
             % It only masks the hemispheres
-            
-            if obj.isMasked
-                disp('Session has already been masked')
-                return
-            end
             
             if ~obj.isRegistered
                 disp('Session has to be registered first')
@@ -347,7 +341,6 @@ classdef WideFieldProcessor < handle
             obj.f0(~mask_mat) = 0;
             obj.avg_projection(~mask_mat) = 0;
             obj.dff_sigma(~mask_mat) = 0;
-            
             
             try
                 obj.dff(~mask_mat_DFF) = 0;
