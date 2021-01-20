@@ -24,6 +24,7 @@ classdef WideFieldProcessor < handle
         isMasked        logical
         isZipped        logical
         isThresholded   logical
+        isDeconvolved   logical
     end
     
     % Initialization methods
@@ -40,6 +41,7 @@ classdef WideFieldProcessor < handle
             obj.isMasked = false;
             obj.isZipped = false;
             obj.isThresholded = false;
+            obj.isDeconvolved = false;
             obj.tform = [];
             obj.moving_time = [];
         
@@ -149,6 +151,8 @@ classdef WideFieldProcessor < handle
            frames = find(frames);
            n_frames = length(frames);
            
+           progressBar()
+           
            if n_frames < block_size
                image_raw = single(obj.Stack(: ,:, frames));
            
@@ -159,6 +163,7 @@ classdef WideFieldProcessor < handle
                
                
                num_blocks = floor(n_frames / block_size);
+               
                
                for i = 1:num_blocks
                    
@@ -222,9 +227,13 @@ classdef WideFieldProcessor < handle
                         
         end
         
-        function reComputeDFF(obj)
+        function reComputeDFF(obj, movingFlag)
             
-            if ~isempty(obj.moving_time)
+            if nargin == 1
+                movingFlag = true;
+            end
+            
+            if movingFlag && ~isempty(obj.moving_time)
                 image_raw = readTiff(obj, obj.moving_time);
             else
                 image_raw = readTiff(obj);
@@ -238,6 +247,7 @@ classdef WideFieldProcessor < handle
             obj.dff = 100* (image_raw - obj.f0) ./ obj.f0;
             
             if obj.isMasked
+                obj.isMaked = false;
                 obj.maskSession;
             end
             
@@ -400,6 +410,12 @@ classdef WideFieldProcessor < handle
                     if i == length(where_isHigh)
                         temp = obj.dff(j, where_isHigh(i):n_frames);
                         obj.dff(j, where_isHigh(i):n_frames) = temp;
+                        where_ends = find(temp < 0.5 * std, 1, 'first');
+                        
+                        if where_ends < n_frames
+                            obj.dff(j, where_ends:end) = 0;
+                        end
+                        
                         
                     elseif where_isHigh(i+1) - where_isHigh(i) == 1
                         continue
@@ -429,6 +445,11 @@ classdef WideFieldProcessor < handle
             % Developed by SAM on 1/15/2020
             % Last updated 1/15/2020
             
+            if obj.isDeconvolved
+                disp('It has already been deconvolved')
+                return
+            end
+            
             if ~obj.isThresholded
                 disp('First threshold the signal, works better')
                 return
@@ -450,6 +471,8 @@ classdef WideFieldProcessor < handle
                 obj.dff(i,:) = deconvlucy(obj.dff(i,:)', ...
                     kernel_for_lucy);
             end
+            
+            obj.isDeconvolved = true;
             
         end
         
@@ -729,7 +752,7 @@ classdef WideFieldProcessor < handle
             end
             
             min_val = 0;
-            max_val = 30;
+            max_val = 20;
             
             parser = inputParser;
             addParameter(parser, 'DownSamp', 1)
