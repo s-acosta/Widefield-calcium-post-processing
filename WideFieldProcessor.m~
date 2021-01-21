@@ -709,7 +709,7 @@ classdef WideFieldProcessor < handle
             
         end
         
-        function [traces, pixel_idx, mask_mat] = getRegionTraces(mat, mask_struct, ...
+        function [traces, pixel_idx] = getRegionTraces(mat, mask_struct, ...
                 n_pixels, region, side)
             
             pixel_idx = zeros(n_pixels, 2);
@@ -722,7 +722,7 @@ classdef WideFieldProcessor < handle
                 mask_mat(~mask_struct.(region)) = false;
             catch
                 disp('Region not valid')
-                    return
+                return
             end
             
             if nargin == 5
@@ -736,18 +736,21 @@ classdef WideFieldProcessor < handle
                         mask_mat(1:190, :) = false;
                         
                     otherwise
-                        disp('Please choose right or left')
-                        return
+                        
                 end
-                
+                end
             end
-            
-            for j = 1:size(mask_mat, 3)
                 
-                mask_true = find(mask_mat(:,:,j));
+            
+            
+            
+            for j = 1:size(mask, 3)
+                
+                mask_true = find(mask(:,:,j));
                 
                 for i = 1:n_pixels
-                   
+                    
+                    
                     element = randi(numel(mask_true));
                     [pixel_idx(i,1), pixel_idx(i,2)] = ind2sub([size(mat,1), ...
                         size(mat,2)], mask_true(element));
@@ -764,6 +767,8 @@ classdef WideFieldProcessor < handle
                 pixel_idx = pixel_idx(order, :);
                 
             end
+            
+            
             
         end
         
@@ -957,7 +962,6 @@ classdef WideFieldProcessor < handle
             tiledlayout(n_pixels, 2*n_pixels);
             
             nexttile(1, [n_pixels n_pixels])
-           
             imagesc(mean(mat,3), 'AlphaData', mask)
             ax_opt = {'XColor',[0 0 0], 'YColor',[0 0 0], ...
                 'Colormap',colormap('parula'), 'DataAspectRatio', [1 1 1]};
