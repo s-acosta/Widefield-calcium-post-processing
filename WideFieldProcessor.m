@@ -46,7 +46,7 @@ classdef WideFieldProcessor < handle
             obj.moving_time = [];
         
             if nargin == 0
-                obj.Options.Mode = 'manual';
+%                 obj.Options.Mode = 'manual';
                 return
             else
                 obj.getFile(filename);
@@ -718,11 +718,11 @@ classdef WideFieldProcessor < handle
             mask_mat = mask_struct.ALL;
             mask_mat(~mask_struct.Window) = false;
             
-            try 
+            try
                 mask_mat(~mask_struct.(region)) = false;
             catch
                 disp('Region not valid')
-                    return
+                return
             end
             
             if nargin == 5
@@ -730,8 +730,8 @@ classdef WideFieldProcessor < handle
                 switch side
                     
                     case 'left'
-                        mask_mat(:, 191:end) = false;
-                    
+                        mask_mat(200:end, :) = false;
+                        
                     case 'right'
                         mask_mat(1:190, :) = false;
                         
@@ -742,32 +742,30 @@ classdef WideFieldProcessor < handle
                 
             end
             
-            for j = 1:size(mask_mat, 3)
+            
+            mask_true = find(mask_mat);
+            
+            for i = 1:n_pixels
                 
-                mask_true = find(mask_mat(:,:,j));
+                element = randi(numel(mask_true));
+                [pixel_idx(i,1), pixel_idx(i,2)] = ind2sub([size(mat,1), ...
+                    size(mat,2)], mask_true(element));
                 
-                for i = 1:n_pixels
-                   
-                    element = randi(numel(mask_true));
-                    [pixel_idx(i,1), pixel_idx(i,2)] = ind2sub([size(mat,1), ...
-                        size(mat,2)], mask_true(element));
-                    
-                    traces(i,:) = mat(pixel_idx(i,1), pixel_idx(i,2), :);
-                    
-                end
-                
-                linear_idxs = sub2ind([size(mat,1) size(mat,2)], ...
-                    pixel_idx(:,1), pixel_idx(:,2));
-                [~, order] = sort(linear_idxs, 'ascend');
-                
-                traces = traces(order, :);
-                pixel_idx = pixel_idx(order, :);
+                traces(i,:) = mat(pixel_idx(i,1), pixel_idx(i,2), :);
                 
             end
+            
+            linear_idxs = sub2ind([size(mat,1) size(mat,2)], ...
+                pixel_idx(:,1), pixel_idx(:,2));
+            [~, order] = sort(linear_idxs, 'ascend');
+            
+            traces = traces(order, :);
+            pixel_idx = pixel_idx(order, :);
             
         end
         
     end
+    
     
     % Graphic methods
     methods (Access = public)
@@ -938,7 +936,10 @@ classdef WideFieldProcessor < handle
             
         end
         
-        function showRegionTraces(mat, traces, pixel_idx, mask)
+        function showRegionTraces(mat, traces, pixel_idx, mask_struct)
+            
+            mask = mask_struct.ALL;
+            mask(~mask_struct.Window) = 0;
             
             n_pixels = size(traces,1);
             pixel_mat = false(size(mat, 1), size(mat, 2));
@@ -959,19 +960,36 @@ classdef WideFieldProcessor < handle
             nexttile(1, [n_pixels n_pixels])
            
             imagesc(mean(mat,3), 'AlphaData', mask)
+            
+            hold on
+            
+            fn = fieldnames(mask_struct);
+            for i = 3:numel(fn)
+                
+                layer = mask_struct.(fn{i}) ;
+                layer(~mask_struct.Window) = 0;
+                contour(gca, layer, [1 1], 'Color', 'k', 'LineWidth', 2);
+                hold on
+                
+            end
+            ax.Color = [1 1 1];
+            hold off
+            
             ax_opt = {'XColor',[0 0 0], 'YColor',[0 0 0], ...
                 'Colormap',colormap('parula'), 'DataAspectRatio', [1 1 1]};
             set(gca, ax_opt{:});
             set(gca,'Visible','off')
             
-            ymax = max(traces(:)) + 5;
-            ymin = min(traces(:)) + 5;
+            ymax = max(traces(:));
+            ymin = min(traces(:));
             
             for i = 1:n_pixels
                 nexttile(n_pixels + 1 + n_pixels*2*(i-1), [1 n_pixels])
                 plot(traces(i,:))
                 ylim([ymin ymax]);
             end
+            
+            
             
         end
         
